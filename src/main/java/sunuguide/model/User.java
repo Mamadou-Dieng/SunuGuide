@@ -6,7 +6,7 @@ import java.util.List;
 @Entity
 @Table(name = "users")
 public class User {
-<<<<<<< HEAD
+
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long userId;
 
@@ -30,9 +30,4 @@ public class User {
     public void setRoutes(List<Route> routes) { this.routes = routes; }
     public ChatbotSession getSession() { return session; }
     public void setSession(ChatbotSession session) { this.session = session; }
-=======
-
-
-    ///////////////////////////////////////////////////////////
->>>>>>> b766b8ec9a81b6fb7ff5643967667fb00ec0a2a6
 }
