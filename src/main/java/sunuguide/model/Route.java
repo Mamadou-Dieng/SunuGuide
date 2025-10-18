@@ -12,6 +12,8 @@ public class Route {
     private String departurePoint;
     private String arrivalPoint;
     private String chosenCriteria;
+    //liste de critere
+    //dependance swagger pour obtenir une interface de test
 
     @ManyToOne
     @JoinColumn(name = "user_id")
