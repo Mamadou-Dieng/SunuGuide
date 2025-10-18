@@ -10,6 +10,11 @@ public class ChatbotSession {
 
     @Lob
     private String messageHistory;
+    //tableau de string
+    //time (l'heur d'envoi du message  en time stamp)
+    //ajouter le model message et iniatialiser message history comme un tableau de message
+    //table message
+    //spring boot  entities
 
     private String languageUsed;
 
