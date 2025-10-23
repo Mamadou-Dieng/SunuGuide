@@ -2,7 +2,7 @@ package sunuguide.service;
 
 import sunuguide.model.ChatbotSession;
 import sunuguide.model.Message;
-import sunuguide.repository.ChatbotRepository;
+import sunuguide.repository.ChatbotSessionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,12 +12,12 @@ import java.util.NoSuchElementException;
 
 @Service // Marque la classe comme un service Spring
 @Transactional // Assure que toutes les méthodes sont exécutées dans une transaction
-public class ChatbotService {
+public class ChatbotSessionService {
 
-    private final ChatbotRepository chatbootRepository;
+    private final ChatbotSessionRepository chatbootRepository;
 
     @Autowired
-    public ChatbotService(ChatbotRepository chatbootRepository) {
+    public ChatbotSessionService(ChatbotSessionRepository chatbootRepository) {
         this.chatbootRepository = chatbootRepository;
     }
 

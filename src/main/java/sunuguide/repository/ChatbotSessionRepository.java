@@ -7,7 +7,7 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 @Repository // Marque l'interface comme un composant de repository Spring
-public interface ChatbotRepository extends JpaRepository<ChatbotSession, Long> {
+public interface ChatbotSessionRepository extends JpaRepository<ChatbotSession, Long> {
 
     // Exemple de méthode personnalisée : trouver une session par l'ID de l'utilisateur
     Optional<ChatbotSession> findByUserId(Long userId);
