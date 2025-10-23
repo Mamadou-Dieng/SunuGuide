@@ -1,7 +1,7 @@
 package sunuguide.model;
 
 import jakarta.persistence.*;
-import java.time.Instant; // Pour l'horodatage
+import java.time.Instant;
 
 @Entity
 @Table(name = "session_messages")
@@ -11,27 +11,24 @@ public class Message {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Contenu du message (peut être long, donc @Lob est approprié)
     @Lob
     @Column(nullable = false)
     private String content;
 
-    // Horodatage de l'envoi
     @Column(nullable = false)
     private Instant sendTime;
 
-    // Lien vers la session parente (Clé étrangère)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "session_id", nullable = false)
     private ChatbotSession session;
 
     // --- Constructeurs ---
     public Message() {
-        this.sendTime = Instant.now(); // Initialiser le temps lors de la création
+        this.sendTime = Instant.now();
     }
 
     public Message(String content) {
-        this(); // Appelle le constructeur par défaut pour initialiser sendTime
+        this();
         this.content = content;
     }
 

@@ -10,30 +10,39 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.NoSuchElementException;
 
-@Service // Marque la classe comme un service Spring
-@Transactional // Assure que toutes les méthodes sont exécutées dans une transaction
+@Service
+@Transactional
 public class ChatbotSessionService {
 
-    private final ChatbotSessionRepository chatbootRepository;
+    // Renommé pour la cohérence : sessionRepository
+    private final ChatbotSessionRepository sessionRepository;
 
     @Autowired
-    public ChatbotSessionService(ChatbotSessionRepository chatbootRepository) {
-        this.chatbootRepository = chatbootRepository;
+    public ChatbotSessionService(ChatbotSessionRepository sessionRepository) {
+        this.sessionRepository = sessionRepository;
     }
 
     /**
-     * Crée et sauvegarde une nouvelle session.
+     * Crée et sauvegarde une nouvelle session anonyme.
+     * C'est la méthode à utiliser par l'AuthController lors de la première visite.
      */
-    public ChatbotSession createSession(ChatbotSession session) {
-        // Logique métier avant la sauvegarde (ex: validation)
-        return chatbootRepository.save(session);
+    public ChatbotSession createAnonymousSession() {
+        return sessionRepository.save(new ChatbotSession());
+    }
+
+    /**
+     * Sauvegarde ou met à jour une session.
+     * Utilisé principalement par l'AuthService pour attacher/fusionner un utilisateur.
+     */
+    public ChatbotSession save(ChatbotSession session) {
+        return sessionRepository.save(session);
     }
 
     /**
      * Récupère une session par son ID.
      */
     public ChatbotSession getSessionById(Long sessionId) {
-        return chatbootRepository.findById(sessionId)
+        return sessionRepository.findById(sessionId)
                 .orElseThrow(() -> new NoSuchElementException("Session non trouvée avec l'ID: " + sessionId));
     }
 
@@ -53,7 +62,7 @@ public class ChatbotSessionService {
         session.addMessage(newMessage);
 
         // Le repository sauvegarde la session et, grâce à CascadeType.ALL, le nouveau message
-        return chatbootRepository.save(session);
+        return sessionRepository.save(session);
     }
 
     /**
@@ -64,6 +73,4 @@ public class ChatbotSessionService {
         // L'annotation @OrderBy assure que l'historique est déjà trié
         return session.getMessageHistory();
     }
-
-    // Ajoutez d'autres méthodes de logique métier ici (ex: terminer la session, supprimer, etc.)
 }
