@@ -11,8 +11,7 @@ public class Message {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Lob
-    @Column(nullable = false)
+    @Column(length = 2000, nullable = false)
     private String content;
 
     @Column(nullable = false)
