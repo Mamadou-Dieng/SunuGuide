@@ -1,5 +1,6 @@
 package sunuguide.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.time.Instant;
 
@@ -11,7 +12,7 @@ public class Message {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Lob
+    //@Lob
     @Column(nullable = false)
     private String content;
 
@@ -33,12 +34,14 @@ public class Message {
     }
 
     // --- Getters et Setters ---
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public String getContent() { return content; }
     public void setContent(String content) { this.content = content; }
     public Instant getSendTime() { return sendTime; }
     public void setSendTime(Instant sendTime) { this.sendTime = sendTime; }
+    @JsonIgnore
     public ChatbotSession getSession() { return session; }
     public void setSession(ChatbotSession session) { this.session = session; }
 }

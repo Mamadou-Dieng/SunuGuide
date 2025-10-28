@@ -81,4 +81,17 @@ public class ChatbotController {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
     }
+
+
+    // Dans sunuguide.controller.ChatbotController
+
+    /**
+     * POST /api/chatbot/session : Crée une nouvelle session de chatbot anonyme.
+     */
+    @PostMapping("/session")
+    public ResponseEntity<ChatbotSession> createSession() {
+        ChatbotSession newSession = sessionService.createAnonymousSession();
+        // Retourne la session créée avec son nouvel ID
+        return new ResponseEntity<>(newSession, HttpStatus.CREATED);
+    }
 }

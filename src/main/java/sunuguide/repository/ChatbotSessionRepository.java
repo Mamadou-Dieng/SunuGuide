@@ -16,6 +16,6 @@ public interface ChatbotSessionRepository extends JpaRepository<ChatbotSession, 
      *
      * Étant donné la relation One-to-One, le retour est Optional<ChatbotSession>.
      */
-    Optional<ChatbotSession> findByUserId(Long userId);
+    Optional<ChatbotSession> findByUserUserId(Long userId);
 
 }
