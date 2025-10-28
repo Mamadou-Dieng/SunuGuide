@@ -25,7 +25,6 @@ public class ChatbotController {
 
     /**
      * GET /api/chatbot/{sessionId} : Récupère les détails de la session (principalement pour débogage ou vérification).
-     * Anciennement : GET /api/sessions/{sessionId}
      */
     @GetMapping("/{sessionId}")
     public ResponseEntity<ChatbotSession> getSessionDetails(@PathVariable Long sessionId) {
@@ -38,9 +37,8 @@ public class ChatbotController {
     }
 
     /**
-     * POST /api/chatbot/{sessionId}/message : Ajoute un nouveau message et reçoit potentiellement la réponse du bot.
+     * POST /api/chatbot/{sessionId}/message : Ajoute un nouveau message et reçoit la réponse du bot.
      * C'est l'endpoint clé pour la conversation.
-     * Anciennement : POST /api/sessions/{sessionId}/message
      */
     @PostMapping("/{sessionId}/message")
     public ResponseEntity<List<Message>> sendMessageAndGetHistory(@PathVariable Long sessionId,
@@ -52,15 +50,11 @@ public class ChatbotController {
         }
 
         try {
-            // 1. Sauvegarde le message de l'utilisateur
-            sessionService.addMessageToHistory(sessionId, content);
+            // LIGNE CORRIGÉE : Utilise la méthode qui gère le cycle complet (message utilisateur + réponse bot).
+            List<Message> updatedHistory = sessionService.sendMessageAndGetResponse(sessionId, content);
 
-            // 2. LOGIQUE DU CHATBOT (SIMULÉE) : Ici, vous appelleriez le service IA pour générer une réponse
-            // Cette réponse serait ensuite ajoutée à l'historique par une autre méthode de service.
-
-            // 3. Retourne l'historique complet après l'interaction (pour mettre à jour l'interface React)
-            ChatbotSession updatedSession = sessionService.getSessionById(sessionId);
-            return ResponseEntity.ok(updatedSession.getMessageHistory());
+            // Retourne l'historique mis à jour (qui contient maintenant le message utilisateur ET la réponse du bot).
+            return ResponseEntity.ok(updatedHistory);
 
         } catch (NoSuchElementException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
@@ -69,21 +63,20 @@ public class ChatbotController {
 
     /**
      * GET /api/chatbot/{sessionId}/history : Récupère l'historique complet des messages.
-     * Anciennement : GET /api/sessions/{sessionId}/history
      */
     @GetMapping("/{sessionId}/history")
     public ResponseEntity<List<Message>> getSessionHistory(@PathVariable Long sessionId) {
         try {
-            ChatbotSession session = sessionService.getSessionById(sessionId);
-            // Retourne directement la liste ordonnée des messages
-            return ResponseEntity.ok(session.getMessageHistory());
+            // Il est préférable d'utiliser une méthode de service dédiée si elle existe,
+            // ou l'ancienne logique simplifiée du service si le service est bien structuré.
+            // Vu les corrections précédentes, on peut utiliser le getMessageHistory du service.
+            List<Message> history = sessionService.getMessageHistory(sessionId);
+            return ResponseEntity.ok(history);
         } catch (NoSuchElementException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
     }
 
-
-    // Dans sunuguide.controller.ChatbotController
 
     /**
      * POST /api/chatbot/session : Crée une nouvelle session de chatbot anonyme.
@@ -91,7 +84,7 @@ public class ChatbotController {
     @PostMapping("/session")
     public ResponseEntity<ChatbotSession> createSession() {
         ChatbotSession newSession = sessionService.createAnonymousSession();
-        // Retourne la session créée avec son nouvel ID
-        return new ResponseEntity<>(newSession, HttpStatus.CREATED);
+        // MODIFIÉ : Retourne HttpStatus.OK (200) au lieu de HttpStatus.CREATED (201)
+        return new ResponseEntity<>(newSession, HttpStatus.OK);
     }
 }

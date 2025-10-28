@@ -19,6 +19,10 @@ public class Message {
     @Column(nullable = false)
     private Instant sendTime;
 
+    // NOUVEAU Champ pour identifier l'expéditeur (ex: "USER" ou "BOT")
+    @Column(nullable = false)
+    private String sender;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "session_id", nullable = false)
     private ChatbotSession session;
@@ -33,6 +37,14 @@ public class Message {
         this.content = content;
     }
 
+
+    // NOUVEAU Constructeur utilisé pour la conversation
+    public Message(ChatbotSession session, String content, String sender) {
+        this();
+        this.session = session;
+        this.content = content;
+        this.sender = sender;
+    }
     // --- Getters et Setters ---
 
     public Long getId() { return id; }
@@ -43,5 +55,7 @@ public class Message {
     public void setSendTime(Instant sendTime) { this.sendTime = sendTime; }
     @JsonIgnore
     public ChatbotSession getSession() { return session; }
-    public void setSession(ChatbotSession session) { this.session = session; }
+    public void setSession(ChatbotSession session) {this.session = session; }
+    public String getSender() { return sender; }
+    public void setSender(String sender) { this.sender = sender; }
 }

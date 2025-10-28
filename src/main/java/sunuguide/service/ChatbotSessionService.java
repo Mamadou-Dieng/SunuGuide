@@ -10,16 +10,21 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.NoSuchElementException;
 
+import sunuguide.repository.MessageRepository; // NOUVEAU
+
 @Service
 @Transactional
 public class ChatbotSessionService {
 
     // Renommé pour la cohérence : sessionRepository
     private final ChatbotSessionRepository sessionRepository;
+    private final MessageRepository messageRepository; // LIGNE À AJOUTER : Déclaration de la variable
 
     @Autowired
-    public ChatbotSessionService(ChatbotSessionRepository sessionRepository) {
+    // MODIFIER la signature pour inclure MessageRepository
+    public ChatbotSessionService(ChatbotSessionRepository sessionRepository, MessageRepository messageRepository) {
         this.sessionRepository = sessionRepository;
+        this.messageRepository = messageRepository; // CORRECTION : 'messageRepository' en minuscule pour correspondre à la variable déclarée
     }
 
     /**
@@ -46,23 +51,32 @@ public class ChatbotSessionService {
                 .orElseThrow(() -> new NoSuchElementException("Session non trouvée avec l'ID: " + sessionId));
     }
 
+    // SUPPRIMER ICI L'ANCIENNE MÉTHODE addMessageToHistory
+
     /**
-     * Ajoute un message à l'historique d'une session.
+     * Gère l'intégralité d'un tour de conversation (message utilisateur + réponse bot simulée).
      * @param sessionId L'ID de la session cible.
-     * @param content Le contenu du message à ajouter.
-     * @return La session mise à jour.
+     * @param content Le contenu du message utilisateur.
+     * @return L'historique complet mis à jour.
      */
-    public ChatbotSession addMessageToHistory(Long sessionId, String content) {
+    public List<Message> sendMessageAndGetResponse(Long sessionId, String content) {
         ChatbotSession session = getSessionById(sessionId);
 
-        // Crée le nouveau message
-        Message newMessage = new Message(content);
+        // 1. Enregistrement du message de l'utilisateur (Sender: "USER")
+        Message userMessage = new Message(session, content, "USER");
+        session.addMessage(userMessage);
+        messageRepository.save(userMessage); // Utilisation correcte de messageRepository
 
-        // La méthode utilitaire gère la relation bidirectionnelle
-        session.addMessage(newMessage);
+        // 2. LOGIQUE DE RÉPONSE DU BOT (Simulée)
+        String botResponseContent = "SunuGuide vous répond : Nous sommes là pour vous aider avec vos itinéraires au Sénégal ! Vous avez demandé : '" + content + "'. Par où souhaitez-vous commencer votre voyage ?";
 
-        // Le repository sauvegarde la session et, grâce à CascadeType.ALL, le nouveau message
-        return sessionRepository.save(session);
+        // 3. Enregistrement du message du Bot (Sender: "BOT")
+        Message botMessage = new Message(session, botResponseContent, "BOT");
+        session.addMessage(botMessage);
+        messageRepository.save(botMessage); // Utilisation correcte de messageRepository
+
+        // 4. Retourne l'historique complet
+        return session.getMessageHistory();
     }
 
     /**
