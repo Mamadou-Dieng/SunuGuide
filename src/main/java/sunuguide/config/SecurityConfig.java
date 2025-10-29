@@ -34,6 +34,8 @@ public class SecurityConfig {
 
                 .requestMatchers("/api/messages/**").permitAll()
 
+                .requestMatchers("/api/itineraires/**").permitAll()
+
                 // Permet l'accès à Swagger UI
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
 
@@ -47,4 +49,12 @@ public class SecurityConfig {
 //{
 //  "content": "derniere test de scrum-8."
 //INSERT INTO chatbot_sessions (language_used) VALUES ('fr');
+//}
+
+//{
+//  "startLatitude": 48.8584,
+//  "startLongitude": 2.2945,
+//  "endLatitude": 40.7128,
+//  "endLongitude": -74.0060,
+//  "transportMode": "CAR"
 //}
