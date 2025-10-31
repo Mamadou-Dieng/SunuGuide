@@ -3,16 +3,9 @@ package sunuguide.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import jakarta.validation.Valid;
-import sunuguide.dto.ItineraryRequestDTO;
 import sunuguide.model.Itinerary;
 import sunuguide.service.ItineraryService;
 
-/**
- * Contrôleur REST pour la gestion des itinéraires.
- * Permet de calculer et de sauvegarder un itinéraire
- * à partir des coordonnées géographiques et du mode de transport.
- */
 @RestController
 @RequestMapping("/api/itineraires")
 public class ItineraryController {
@@ -20,28 +13,15 @@ public class ItineraryController {
     @Autowired
     private ItineraryService itineraryService;
 
-    /**
-     * Endpoint principal : calculer un itinéraire entre deux points.
-     * Exemple : POST /api/itineraires/calculer
-     */
-    @PostMapping("/calculer")
-    public ResponseEntity<Itinerary> calculer(@Valid @RequestBody ItineraryRequestDTO dto) {
-        Itinerary itin = itineraryService.calculerItineraire(
-                dto.getStartLatitude(),
-                dto.getStartLongitude(),
-                dto.getEndLatitude(),
-                dto.getEndLongitude(),
-                dto.getTransportMode()
-        );
+    @GetMapping("/calculer")
+    public ResponseEntity<Itinerary> calculerItineraire(
+            @RequestParam("lat1") Double lat1,
+            @RequestParam("lon1") Double lon1,
+            @RequestParam("lat2") Double lat2,
+            @RequestParam("lon2") Double lon2,
+            @RequestParam(value = "mode", defaultValue = "BUS") String mode
+    ) {
+        Itinerary itin = itineraryService.calculerItineraire(lat1, lon1, lat2, lon2, mode);
         return ResponseEntity.ok(itin);
-    }
-
-    /**
-     * Endpoint simple pour tester le contrôleur.
-     * Exemple : GET /api/itineraires
-     */
-    @GetMapping
-    public ResponseEntity<String> info() {
-        return ResponseEntity.ok("Utilisez POST /api/itineraires/calculer pour générer un nouvel itinéraire.");
     }
 }

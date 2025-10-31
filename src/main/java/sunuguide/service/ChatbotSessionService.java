@@ -1,90 +1,101 @@
 package sunuguide.service;
 
-import sunuguide.model.ChatbotSession;
-import sunuguide.model.Message;
-import sunuguide.repository.ChatbotSessionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientRequestException;
+import reactor.core.publisher.Mono;
+import sunuguide.model.ChatbotSession;
+import sunuguide.model.Message;
+import sunuguide.repository.ChatbotSessionRepository;
+import sunuguide.repository.MessageRepository;
 
+import java.net.ConnectException;
 import java.util.List;
 import java.util.NoSuchElementException;
-
-import sunuguide.repository.MessageRepository; // NOUVEAU
 
 @Service
 @Transactional
 public class ChatbotSessionService {
 
-    // Renommé pour la cohérence : sessionRepository
     private final ChatbotSessionRepository sessionRepository;
-    private final MessageRepository messageRepository; // LIGNE À AJOUTER : Déclaration de la variable
+    private final MessageRepository messageRepository;
+    private final WebClient webClient;
+
+    // URL de ton modèle IA local (Flask, FastAPI, etc.)
+    private static final String MODEL_API_URL = "http://localhost:5000/chat";
 
     @Autowired
-    // MODIFIER la signature pour inclure MessageRepository
-    public ChatbotSessionService(ChatbotSessionRepository sessionRepository, MessageRepository messageRepository) {
+    public ChatbotSessionService(ChatbotSessionRepository sessionRepository,
+                                 MessageRepository messageRepository) {
         this.sessionRepository = sessionRepository;
-        this.messageRepository = messageRepository; // CORRECTION : 'messageRepository' en minuscule pour correspondre à la variable déclarée
+        this.messageRepository = messageRepository;
+        this.webClient = WebClient.create();
     }
 
-    /**
-     * Crée et sauvegarde une nouvelle session anonyme.
-     * C'est la méthode à utiliser par l'AuthController lors de la première visite.
-     */
     public ChatbotSession createAnonymousSession() {
         return sessionRepository.save(new ChatbotSession());
     }
 
-    /**
-     * Sauvegarde ou met à jour une session.
-     * Utilisé principalement par l'AuthService pour attacher/fusionner un utilisateur.
-     */
-    public ChatbotSession save(ChatbotSession session) {
-        return sessionRepository.save(session);
-    }
-
-    /**
-     * Récupère une session par son ID.
-     */
     public ChatbotSession getSessionById(Long sessionId) {
         return sessionRepository.findById(sessionId)
-                .orElseThrow(() -> new NoSuchElementException("Session non trouvée avec l'ID: " + sessionId));
+                .orElseThrow(() -> new NoSuchElementException("Session non trouvée : " + sessionId));
     }
 
-    // SUPPRIMER ICI L'ANCIENNE MÉTHODE addMessageToHistory
-
     /**
-     * Gère l'intégralité d'un tour de conversation (message utilisateur + réponse bot simulée).
-     * @param sessionId L'ID de la session cible.
-     * @param content Le contenu du message utilisateur.
-     * @return L'historique complet mis à jour.
+     * Envoie un message utilisateur au modèle externe, reçoit la réponse IA,
+     * et met à jour l'historique dans la base.
      */
     public List<Message> sendMessageAndGetResponse(Long sessionId, String content) {
         ChatbotSession session = getSessionById(sessionId);
 
-        // 1. Enregistrement du message de l'utilisateur (Sender: "USER")
+        // 1️⃣ Sauvegarde du message utilisateur
         Message userMessage = new Message(session, content, "USER");
         session.addMessage(userMessage);
-        messageRepository.save(userMessage); // Utilisation correcte de messageRepository
+        messageRepository.save(userMessage);
 
-        // 2. LOGIQUE DE RÉPONSE DU BOT (Simulée)
-        String botResponseContent = "SunuGuide vous répond : Nous sommes là pour vous aider avec vos itinéraires au Sénégal ! Vous avez demandé : '" + content + "'. Par où souhaitez-vous commencer votre voyage ?";
+        // 2️⃣ Appel du modèle IA externe
+        ChatResponse response;
+        try {
+            response = webClient.post()
+                    .uri(MODEL_API_URL)
+                    .bodyValue(new ChatRequest(content))
+                    .retrieve()
+                    .bodyToMono(ChatResponse.class)
+                    .block(); // synchrone
+        } catch (WebClientRequestException e) {
+            if (e.getRootCause() instanceof ConnectException) {
+                System.err.println("ERREUR: Le modèle chatbot (port 5000) est hors ligne.");
+                Message errorMessage = new Message(session, "⚠️ Le modèle IA n'est pas disponible pour le moment.", "BOT");
+                messageRepository.save(errorMessage);
+                return session.getMessageHistory();
+            }
+            throw e;
+        }
 
-        // 3. Enregistrement du message du Bot (Sender: "BOT")
-        Message botMessage = new Message(session, botResponseContent, "BOT");
+        // 3️⃣ Sauvegarde de la réponse du modèle
+        String botReply = (response != null && response.getResponse() != null)
+                ? response.getResponse()
+                : "Je n’ai pas pu générer de réponse.";
+        Message botMessage = new Message(session, botReply, "BOT");
         session.addMessage(botMessage);
-        messageRepository.save(botMessage); // Utilisation correcte de messageRepository
+        messageRepository.save(botMessage);
 
-        // 4. Retourne l'historique complet
+        // 4️⃣ Retourne tout l’historique
         return session.getMessageHistory();
     }
 
-    /**
-     * Récupère l'historique des messages d'une session.
-     */
     public List<Message> getMessageHistory(Long sessionId) {
         ChatbotSession session = getSessionById(sessionId);
-        // L'annotation @OrderBy assure que l'historique est déjà trié
         return session.getMessageHistory();
+    }
+
+    // --- Objets pour la communication avec l'API du modèle ---
+    private record ChatRequest(String prompt) {}
+    private static class ChatResponse {
+        private String response;
+        public String getResponse() { return response; }
+        public void setResponse(String response) { this.response = response; }
     }
 }
