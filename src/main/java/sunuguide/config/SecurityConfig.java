@@ -36,7 +36,9 @@ public class SecurityConfig {
                 // Autoriser l'accès public aux autres services (Chatbot, Distance, Messages, Users)
                 .requestMatchers("/api/chatbot/**", "/api/distance/**", "/api/messages/**", "/api/users/**").permitAll()
 
-                // Permettre l'accès à Swagger UI et à la documentation
+                .requestMatchers("/api/itineraires/**").permitAll()
+
+                // Permet l'accès à Swagger UI
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
 
                 // 3. Sécuriser toutes les autres requêtes par défaut (nécessite un JWT/Session)
@@ -46,3 +48,15 @@ public class SecurityConfig {
         return http.build();
     }
 }
+//{
+//  "content": "derniere test de scrum-8."
+//INSERT INTO chatbot_sessions (language_used) VALUES ('fr');
+//}
+
+//{
+//  "startLatitude": 48.8584,
+//  "startLongitude": 2.2945,
+//  "endLatitude": 40.7128,
+//  "endLongitude": -74.0060,
+//  "transportMode": "CAR"
+//}
