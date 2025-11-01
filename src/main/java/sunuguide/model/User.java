@@ -13,7 +13,7 @@ public class User {
 
     // Email est l'unique identifiant pour les utilisateurs enregistrés.
     // Rendu 'nullable = true' pour les utilisateurs invités (anonymes).
-    @Column(unique = true, nullable = true)
+    @Column( nullable = true)
     private String email;
 
     @Column(nullable = false)
