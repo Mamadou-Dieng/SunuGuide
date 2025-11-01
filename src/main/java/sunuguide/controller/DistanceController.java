@@ -8,7 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/interval")
+@RequestMapping("/api/distance")
 public class DistanceController {
 
     private final DistanceService intervalService;
@@ -18,7 +18,7 @@ public class DistanceController {
         this.intervalService = distanceService;
     }
 
-    @GetMapping("/distance")
+    @GetMapping("/")
     public ResponseEntity<Double> getDistance(
             @RequestParam double lat1,
             @RequestParam double lon1,
