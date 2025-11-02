@@ -20,7 +20,7 @@ public class ItineraryService {
     private ItineraryRepository itineraryRepository;
 
     private final WebClient webClient;
-    private static final String MODEL_API_URL = "http://localhost:5000/predict";
+    private static final String MODEL_API_URL = "https://unsubmissive-lulu-semibald.ngrok-free.dev/predict";
 
     public ItineraryService() {
         this.webClient = WebClient.create();
@@ -29,9 +29,10 @@ public class ItineraryService {
     /**
      * Appelle le modèle externe. Gère l'échec de connexion en retournant un objet vide
      * ou en lançant une exception personnalisée si nécessaire.
+     * http://127.0.0.1:8000/predict
      */
-    public Itinerary calculerItineraire(Double lat1, Double lon1, Double lat2, Double lon2, String transportMode) {
-        var request = new PredictionRequest(lat1, lon1, lat2, lon2, transportMode);
+    public Itinerary calculerItineraire(String depart, String arrivee ) {
+        var request = new PredictionRequest(depart, arrivee);
         PredictionResponse response;
 
         try {
@@ -72,7 +73,7 @@ public class ItineraryService {
 
     // ... (Petites classes internes PredictionRequest et PredictionResponse inchangées) ...
 
-    private record PredictionRequest(Double lat1, Double lon1, Double lat2, Double lon2, String mode) {}
+    private record PredictionRequest(String depart, String arrivee) {}
     private static class PredictionResponse {
         private Double distance;
         private Long duration;

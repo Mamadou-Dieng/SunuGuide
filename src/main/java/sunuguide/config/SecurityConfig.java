@@ -20,32 +20,21 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-
-        // 0. Autoriser CORS pour les requêtes multi-origines (souvent nécessaire)
-        http.cors(Customizer.withDefaults());
-
-        // 1. Désactiver la protection CSRF (Cause des erreurs 403 sur les requêtes POST/API)
-        http.csrf(AbstractHttpConfigurer::disable);
-
-        // 2. Définir les autorisations d'accès aux URL
-        http.authorizeHttpRequests(auth -> auth
-                // Autoriser l'accès public à TOUS les endpoints d'authentification (invité, OTP request, OTP validate)
-                .requestMatchers("/api/auth/**").permitAll()
-
-                // Autoriser l'accès public aux autres services (Chatbot, Distance, Messages, Users)
-                .requestMatchers("/api/chatbot/**", "/api/distance/**", "/api/messages/**", "/api/users/**").permitAll()
-
-                .requestMatchers("/api/itineraires/**").permitAll()
-
-                // Permet l'accès à Swagger UI
-                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
-
-                // 3. Sécuriser toutes les autres requêtes par défaut (nécessite un JWT/Session)
-                .anyRequest().authenticated()
-        );
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http
+                // Enable CORS using our CorsConfigurationSource bean
+                .cors(Customizer.withDefaults())
+                // Disable CSRF for APIs
+                .csrf(csrf -> csrf.disable())
+                // Permit all requests (for testing)
+                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
 
         return http.build();
+
+
+
+
+
     }
 }
 //{
