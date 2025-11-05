@@ -24,7 +24,7 @@ public class ChatbotSessionService {
     private final WebClient webClient;
 
     // URL de ton modèle IA local (Flask, FastAPI, etc.)
-    private static final String MODEL_API_URL = "https://unsubmissive-lulu-semibald.ngrok-free.dev/predict";
+    private static final String MODEL_API_URL = "https://unsubmissive-lulu-semibald.ngrok-free.dev";
 
     @Autowired
     public ChatbotSessionService(ChatbotSessionRepository sessionRepository,

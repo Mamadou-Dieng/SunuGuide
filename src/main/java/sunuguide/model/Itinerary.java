@@ -1,7 +1,8 @@
 package sunuguide.model;
 
 import jakarta.persistence.*;
-import java.time.Duration;
+import sunuguide.service.PredictionSegment;
+
 import java.util.List;
 
 @Entity
@@ -17,10 +18,11 @@ public class Itinerary {
 
     @ManyToOne
     @JoinColumn(name = "route_id")
-    private Route route;
+    private Route route; // <--- CORRECTION 1: Changé de String à Route
 
-    @OneToMany(mappedBy = "itinerary", cascade = CascadeType.ALL)
-    private List<TransportSegment> segments;
+    @ElementCollection // <--- CORRECTION 2: Changé de @OneToMany à @ElementCollection
+    @CollectionTable(name = "segment_details", joinColumns = @JoinColumn(name = "itinerary_id"))
+    private List<PredictionSegment> segments;
 
     // getters and setters
     public Long getItineraryId() { return itineraryId; }
@@ -31,8 +33,8 @@ public class Itinerary {
     public void setEstimatedCost(Double estimatedCost) { this.estimatedCost = estimatedCost; }
     public Double getTotalDistance() { return totalDistance; }
     public void setTotalDistance(Double totalDistance) { this.totalDistance = totalDistance; }
-    public Route getRoute() { return route; }
-    public void setRoute(Route route) { this.route = route; }
-    public java.util.List<TransportSegment> getSegments() { return segments; }
-    public void setSegments(java.util.List<TransportSegment> segments) { this.segments = segments; }
+    public Route getRoute() { return route; } // Note : vous devrez aussi changer le type de retour dans le getter/setter
+    public void setRoute(Route route) { this.route = route; } // Note : vous devrez aussi changer le type du paramètre dans le setter
+    public List<PredictionSegment> getSegments() { return segments; }
+    public void setSegments(List<PredictionSegment> segments) { this.segments = segments; }
 }

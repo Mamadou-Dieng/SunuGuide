@@ -3,18 +3,24 @@ package sunuguide.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.reactive.function.client.WebClientRequestException; // Import nécessaire
-import sunuguide.model.Itinerary;
-import sunuguide.repository.ItineraryRepository;
+import org.springframework.web.reactive.function.client.WebClientRequestException;
 import reactor.core.publisher.Mono;
+import sunuguide.model.Itinerary;
+import sunuguide.model.Route;
+import sunuguide.repository.RouteRepository;
+import sunuguide.service.PredictionResponse;
+import sunuguide.service.PredictionSegment;
+import sunuguide.repository.ItineraryRepository;
 
-import java.net.ConnectException; // Import nécessaire
+import java.net.ConnectException;
+import java.util.List;
 
-/**
- * Service métier pour l'obtention des itinéraires via un modèle externe (IA / API).
- */
 @Service
 public class ItineraryService {
+
+    @Autowired
+    private RouteRepository routeRepository;
+
 
     @Autowired
     private ItineraryRepository itineraryRepository;
@@ -27,64 +33,91 @@ public class ItineraryService {
     }
 
     /**
-     * Appelle le modèle externe. Gère l'échec de connexion en retournant un objet vide
-     * ou en lançant une exception personnalisée si nécessaire.
-     * http://127.0.0.1:8000/predict
+     * Calcule un itinéraire via le modèle externe et retourne un objet Itinerary.
      */
-    public Itinerary calculerItineraire(String depart, String arrivee ) {
-        var request = new PredictionRequest(depart, arrivee);
-        PredictionResponse response;
+    public Itinerary calculerItineraire(String depart, String arrivee) {
+        PredictionRequest request =
+                new PredictionRequest(depart, arrivee);
 
         try {
-            // Appel au modèle (API externe)
-            response = webClient.post()
+            // Appel au modèle externe
+            PredictionResponse apiResponse = webClient.post()
                     .uri(MODEL_API_URL)
                     .bodyValue(request)
                     .retrieve()
                     .bodyToMono(PredictionResponse.class)
-                    .block(); // synchrone
-        } catch (WebClientRequestException e) {
-            // Vérifier spécifiquement si la cause est 'Connection refused'
-            if (e.getRootCause() instanceof ConnectException) {
-                System.err.println("ERREUR: Le modèle d'itinéraire externe (port 5000) n'est pas démarré. Connexion refusée.");
+                    .block();
 
-                // Option 1: Renvoyer un objet Itinerary vide pour que le contrôleur réponde 200 OK
-                // C'est l'approche la plus souple pour le moment.
-                return new Itinerary();
+            if (apiResponse == null || apiResponse.getResults() == null || apiResponse.getResults().isEmpty()) {
+                return new Itinerary(); // Retourne vide si pas de données
 
-                // Option 2: Lancer une exception personnalisée que le contrôleur gérera
-                // (Ex: throw new ModelNotAvailableException("Le service de modèle est hors ligne.");)
+
+
             }
-            // Si c'est une autre erreur WebClient (timeout, 4xx, 5xx), la relancer
-            throw e;
+
+            List<PredictionSegment> segments = apiResponse.getResults();
+
+            // Agrégation des données
+            double totalDuration = segments.stream()
+                    .mapToDouble(PredictionSegment::getDureeMin)
+                    .sum();
+
+            double totalCost = segments.stream()
+                    .mapToDouble(PredictionSegment::getPrixEstime)
+                    .sum();
+
+            double totalDistance = segments.stream()
+                    .mapToDouble(PredictionSegment::getDistanceKm)
+                    .sum();
+
+            String route = segments.get(0).getDepart() + " - " + segments.get(0).getArrivee();
+
+            // Création de l'objet Itinerary
+            Itinerary itinerary = new Itinerary();
+            itinerary.setItineraryId(5L); // tu peux générer ou récupérer dynamiquement
+            itinerary.setEstimatedDurationMinutes((long) totalDuration);
+            itinerary.setEstimatedCost(totalCost);
+            itinerary.setTotalDistance(totalDistance);
+
+
+
+            // CORRECTION ICI : CRÉATION ET AFFECTATION DE L'ENTITÉ ROUTE
+            Route routeEntity = new Route();
+            routeEntity.setDeparturePoint(depart);
+            routeEntity.setArrivalPoint(arrivee);
+            // Vous pouvez ajouter une logique pour sauvegarder la route si elle n'existe pas,
+            // ou la chercher. Pour l'instant, nous la créons.
+//            itinerary.setRoute(route);
+
+
+            itinerary.setRoute(routeEntity); // <--- DECOMMENTEZ ET UTILISEZ L'ENTITÉ
+            itinerary.setSegments(segments);
+
+            Route savedRoute = routeRepository.save(routeEntity); // <--- AJOUTER CETTE LIGNE
+
+
+
+
+
+
+
+
+            itinerary.setRoute(savedRoute); // Utiliser l'objet Route sauvegardé
+
+            // Optionnel : sauvegarder dans la base de données
+            // itineraryRepository.save(itinerary);
+
+            return itinerary;
+
+        } catch (WebClientRequestException e) {
+            if (e.getRootCause() instanceof ConnectException) {
+                System.err.println("ERREUR: Le modèle externe n'est pas démarré. Connexion refusée.");
+                return new Itinerary(); // Retourne un objet vide si le service est hors ligne
+            }
+            throw e; // Relance toute autre exception WebClient
         }
 
-        // Construction et Sauvegarde de l’objet Itinerary
-        Itinerary itin = new Itinerary();
-        if (response != null) {
-            itin.setTotalDistance(response.getDistance());
-            itin.setEstimatedDurationMinutes(response.getDuration());
-            itin.setEstimatedCost(response.getCost());
-        }
 
-        // Sauvegarde en base (même si les valeurs sont 0/null si le modèle est hors ligne)
-        return itineraryRepository.save(itin);
     }
 
-    // ... (Petites classes internes PredictionRequest et PredictionResponse inchangées) ...
-
-    private record PredictionRequest(String depart, String arrivee) {}
-    private static class PredictionResponse {
-        private Double distance;
-        private Long duration;
-        private Double cost;
-
-        public Double getDistance() { return distance; }
-        public Long getDuration() { return duration; }
-        public Double getCost() { return cost; }
-
-        public void setDistance(Double distance) { this.distance = distance; }
-        public void setDuration(Long duration) { this.duration = duration; }
-        public void setCost(Double cost) { this.cost = cost; }
-    }
 }
